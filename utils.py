@@ -6,6 +6,8 @@ import pyfits
 import db
 from string import *
 
+
+
 def simple_plot(x, y, vel, filename):
   fig = plt.figure(figsize=(10, 10))
   ax = fig.add_subplot(111, aspect='equal',autoscale_on=False, xlim=[-25,25], ylim=[-25,25])

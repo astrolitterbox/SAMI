@@ -12,7 +12,7 @@ from geom import *
 from test_disk import *
 import sys
 import itertools
-
+from scipy import stats
 
 
 #MCMC settings:
@@ -76,7 +76,7 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 		pa = sampl.flatchain[:,3]
 		incl = sampl.flatchain[:,4]
 		incl, pa, vc = fix_geometry(incl, pa, vc)
-		vc_mod, c_mod, gamma_mod, pa_mod, incl_mod, v0_mod = (vc, np.mean(c), np.mean(gamma), pa, incl, np.mean(v0))
+		vc_mod, c_mod, gamma_mod, pa_mod, incl_mod, v0_mod = (vc, stats.mode(c), stats.mode(gamma), pa, incl, stats.mode(v0))
 		print 'vc', vc_mod, 'c', c_mod, 'gamma', gamma_mod, 'pa', np.degrees(pa_mod), 'incl', np.degrees(incl_mod), 'v0', v0_mod
 		modelParams = (vc_mod, c_mod, gamma_mod, pa_mod, incl_mod)
 		modelVelField = model2_Courteau(modelParams, data)      
@@ -93,7 +93,7 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 		v0 = sampl.flatchain[:,4]
 		
 		incl_mod, pa_mod, vc_mod = fix_geometry(incl, pa, vc)
-		c_mod, v0_mod = (np.mean(c), np.mean(v0))
+		c_mod, v0_mod = (stats.mode(c)[0], stats.mode(v0)[0])
 		print 'vc', vc_mod, 'c', c_mod, 'pa', np.degrees(pa_mod), 'incl', np.degrees(incl_mod), 'v0', v0_mod		
 		modelParams = (vc_mod, c_mod, pa_mod, [incl_mod], v0_mod)
 		modelVelField = expModel(modelParams, (x, y, r50))      
@@ -103,11 +103,11 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 	if prior =='True':
 		PDFfilename = 'img/pdf/prior_'+name
 		mcmcOutFile = 'prior_mcmc.csv'
-		mcmcImgName = 'img/models/good/prior_'+fit+'_RC_'+name
+		mcmcImgName = 'img/models/good/mode/prior_'+fit+'_RC_'+name
 	else:
 		PDFfilename = 'img/pdf/'+name
 		mcmcOutFile = 'mcmc.csv'
-		mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
+		mcmcImgName = 'img/models/good/mode/'+fit+'_RC_'+name
 	
 	delta_coords = get_delta_coords(name)
 	delta_z = get_delta_z(name)
