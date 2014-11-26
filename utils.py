@@ -26,6 +26,21 @@ def get_SAMI_coords(sami_id):
 	ra = db.dbUtils.getFromDB('ra', 'db/SAMI.sqlite', 'SAMI_Master ', ' where sami_id = '+ str(sami_id))[0]
 	dec = db.dbUtils.getFromDB('dec', 'db/SAMI.sqlite', 'SAMI_Master ', ' where sami_id = '+ str(sami_id))[0]
 	return ra, dec
+
+def get_delta_z(sami_id):
+	z = db.dbUtils.getFromDB('z', 'db/SAMI.sqlite', 'SAMI_Master ', ' where sami_id = '+ str(sami_id))[0]
+	alfalfa_id = db.dbUtils.getFromDB('ALFALFA_id', 'db/SAMI.sqlite', 'ALFALFA_Xmatch ', ' where sami_id = '+ str(sami_id))[0]
+	alfalfa_z = db.dbUtils.getFromDB('V_P', 'db/SAMI.sqlite', 'ALFALFA ', ' where object ='+"'"+lstrip(str(alfalfa_id))+"'")/300000
+	return round(np.abs(float(z) - float(alfalfa_z)), 6)
+
+
+def	get_delta_coords(sami_id):
+	ra, dec = get_SAMI_coords(sami_id)
+	alfalfa_id = db.dbUtils.getFromDB('ALFALFA_id', 'db/SAMI.sqlite', 'ALFALFA_Xmatch ', ' where sami_id = '+ str(sami_id))[0]
+	print 'where object ='+"'"+lstrip(str(alfalfa_id))+"'"
+	alfalfa_ra = 15*db.dbUtils.getFromDB('raopt', 'db/SAMI.sqlite', 'ALFALFA ', ' where object ='+"'"+lstrip(str(alfalfa_id))+"'")
+	alfalfa_dec = db.dbUtils.getFromDB('decopt', 'db/SAMI.sqlite', 'ALFALFA ', ' where object ='+"'"+lstrip(str(alfalfa_id))+"'")
+	return (round(np.abs(float(alfalfa_ra) - float(ra)), 6), round(np.abs(float(alfalfa_dec) - float(dec)), 6))
 	
 def get_ALFALFA_W50(ra, dec):
 	alfalfa_ra = db.dbUtils.getFromDB('raopt', 'db/SAMI.sqlite', 'ALFALFA')

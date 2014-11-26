@@ -109,10 +109,13 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 		mcmcOutFile = 'mcmc.csv'
 		mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
 	
+	delta_coords = get_delta_coords(name)
+	delta_z = get_delta_z(name)
 	plotPDF((vc, c, np.degrees(foldPa(pa, vc)[0]), np.degrees(foldIncl(wrapAngle(incl), vc)[0])), ('Vmax', 'c', 'pa', 'incl'), PDFfilename) #check number of parameters -- adjustable plot
 	fit_radius, fit_vel = getRotCurveFromVelField((pa_mod, incl_mod, v0_mod), data)	  
 	fig = plt.figure()
 	fig.add_subplot(221)
+	plt.title("$\Delta$ ra, $\Delta$ dec: "+str(delta_coords)+" $\Delta$z: "+str(delta_z)	)
 	plt.axhline(c='k')
 	plt.axvline(c='k')
 	c = plt.scatter(x, y, c=vel, marker='s', edgecolor='none', vmin=-150, vmax=150)
