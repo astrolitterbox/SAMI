@@ -91,9 +91,12 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 		pa = sampl.flatchain[:,2]
 		incl = sampl.flatchain[:,3]
 		v0 = sampl.flatchain[:,4]
-		
+		chain_incl = foldIncl(wrapAngle(incl), vc)[0]
+		np.savetxt('chains/incl_'+name, chain_incl)
+		plot_hist(np.degrees(chain_incl), 'img/models/hist/incl_'+name)
+
 		incl_mod, pa_mod, vc_mod = fix_geometry(incl, pa, vc)
-		c_mod, v0_mod = (stats.mode(c)[0], stats.mode(v0)[0])
+		c_mod, v0_mod = (np.mean(c), np.mean(v0))
 		print 'vc', vc_mod, 'c', c_mod, 'pa', np.degrees(pa_mod), 'incl', np.degrees(incl_mod), 'v0', v0_mod		
 		modelParams = (vc_mod, c_mod, pa_mod, [incl_mod], v0_mod)
 		modelVelField = expModel(modelParams, (x, y, r50))      
@@ -103,11 +106,11 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 	if prior =='True':
 		PDFfilename = 'img/pdf/prior_'+name
 		mcmcOutFile = 'prior_mcmc.csv'
-		mcmcImgName = 'img/models/good/mode/prior_'+fit+'_RC_'+name
+		mcmcImgName = 'img/models/good/prior_'+fit+'_RC_'+name
 	else:
 		PDFfilename = 'img/pdf/'+name
 		mcmcOutFile = 'mcmc.csv'
-		mcmcImgName = 'img/models/good/mode/'+fit+'_RC_'+name
+		mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
 	
 	delta_coords = get_delta_coords(name)
 	delta_z = get_delta_z(name)

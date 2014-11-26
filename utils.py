@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pyfits
 import db
 from string import *
-
+from astroML.plotting import hist
 
 
 def simple_plot(x, y, vel, filename):
@@ -15,6 +15,12 @@ def simple_plot(x, y, vel, filename):
   plt.colorbar(cb)
   ax.axhline(c='k')
   ax.axvline(c='k')
+  plt.savefig(filename)
+
+def plot_hist(x, filename):
+  fig = plt.figure(figsize=(10, 10))
+  hist(x, bins='blocks')
+  
   plt.savefig(filename)
 
 

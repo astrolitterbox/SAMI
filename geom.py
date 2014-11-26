@@ -4,7 +4,6 @@ from scipy import stats
 
 
 def fix_geometry(incl, pa, vc):
-	print stats.mode(np.abs(vc), axis=None), 'fv', len(vc), np.mean(vc)
 	incl = wrapAngle(incl)
 	incl, vc = foldIncl(incl, vc)
 	pa = wrapAngle(pa)
@@ -13,11 +12,10 @@ def fix_geometry(incl, pa, vc):
 	circularMeanPA = getCircularMean(pa)
 	circularMeanIncl = getCircularMean(incl)
 	if np.mean(vc) >=0:
-		folded_vc = stats.mode(np.abs(vc), axis=None)
+		folded_vc = np.mean(np.abs(vc), axis=None)
 	else:
-		folded_vc = -1*stats.mode(np.abs(vc), axis=None)
-	print folded_vc, 'fv', len(vc), np.mean(vc)	
-	return circularMeanIncl, circularMeanPA, folded_vc[0]
+		folded_vc = -1*np.mean(np.abs(vc), axis=None)
+	return circularMeanIncl, circularMeanPA, folded_vc
 
 
 def getInclVec(ba):
