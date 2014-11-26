@@ -6,8 +6,13 @@ from geom import *
 import sampler, ensemble
 import scipy.stats as stats
 import sys
+import random
 
 prior = sys.argv[2]
+name = sys.argv[1]
+priorIncl = np.genfromtxt('chains/incl_'+name)
+
+
 
 def getPriors(params):
    vc, c, gamma,  pa, incl  = params    
@@ -50,7 +55,7 @@ def getRandParams(initParams):
 
 
 def getRotCurveFromVelField(params, data):
-  x, y, vel, evel, r50, linewidth, HI_Vc_err = data
+  name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
   pa, incl, v0 = params  
   x_rot, y_rot = rotateGalaxy(x, y, -pa)  
   y_rot = np.divide(y_rot, np.cos(incl))
@@ -141,15 +146,24 @@ def getLinewidthPrior(pars, data):
    VmaxPrior = getVmaxPriorProb(vmax, LW, HI_Vc_err)
    return VmaxPrior
 
+def getTwoLevelPrior(pars, data):
+   name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
+   vmax, c, pa, incl, v0 = pars
+   incl_prior_sampling = np.random.choice(priorIncl)
+   LW = linewidth/(2*math.sin(incl_prior_sampling))
+   VmaxPrior = getVmaxPriorProb(vmax, LW, HI_Vc_err)
+   return VmaxPrior   		
+
+
 def lnProbExp(pars, data):
-   x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err = data
+   name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err = data
    vmax, c, pa, incl, v0 = pars
    model_data = (x, y, r50) 
    m_vel = expModel(pars, model_data)
    resid = np.sum((vel - m_vel)**2/(vel_err)**2)
    lnl = -0.5*((resid))
    if prior =='True':
-		linewidthPrior=getLinewidthPrior(pars, data)
+		linewidthPrior=getTwoLevelPrior(pars, data)#getLinewidthPrior(pars, data)
 		return lnl + linewidthPrior
    else:
 		return lnl

@@ -51,9 +51,9 @@ def plotPDF(params, names, filename):
 	
 
 		
-def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit, test):	
+def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit, test):	
 	#get data
-	data = (x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err)
+	data = (name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err)
 	Npar=len(initParams)
 	if fit == 'model2':
 		lnprob0 = lnProb(initParams, data)
@@ -86,14 +86,28 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 		print model_radius.shape, model_RC.shape 
 
 	elif fit == 'exp':
+		if prior =='True':
+			PDFfilename = 'img/pdf/2_prior_'+name
+			mcmcOutFile = '2_prior_mcmc.csv'
+			mcmcImgName = 'img/models/good/2_prior_'+fit+'_RC_'+name
+			histName = 'img/models/hist/2_prior_incl_'+name
+			incl_chainFilename = 'chains/2_prior_incl_'+name
+		else:
+			PDFfilename = 'img/pdf/'+name
+			mcmcOutFile = 'mcmc.csv'
+			mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
+			histName = 'img/models/hist/incl_'+name
+			incl_chainFilename = 'chains/incl_'+name		
+		
+		
 		vc = sampl.flatchain[:,0]
 		c = sampl.flatchain[:,1]
 		pa = sampl.flatchain[:,2]
 		incl = sampl.flatchain[:,3]
 		v0 = sampl.flatchain[:,4]
 		chain_incl = foldIncl(wrapAngle(incl), vc)[0]
-		np.savetxt('chains/incl_'+name, chain_incl)
-		plot_hist(np.degrees(chain_incl), 'img/models/hist/incl_'+name)
+		np.savetxt(incl_chainFilename, chain_incl)
+		plot_hist(np.degrees(chain_incl), histName)
 
 		incl_mod, pa_mod, vc_mod = fix_geometry(incl, pa, vc)
 		c_mod, v0_mod = (np.mean(c), np.mean(v0))
@@ -103,15 +117,8 @@ def fit_galaxy(x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit
 		model_radius = np.linspace(0, 25, 1000)
 		model_RC = vc_mod*(1 - np.exp(-1*(model_radius/(c_mod*r50)))) #((2/math.pi) * vc_mod* np.tanh(model_radius/(c_mod*r50))) 
 		model_linewidth = HI_linewidth/(2*np.sin(incl_mod))
-	if prior =='True':
-		PDFfilename = 'img/pdf/prior_'+name
-		mcmcOutFile = 'prior_mcmc.csv'
-		mcmcImgName = 'img/models/good/prior_'+fit+'_RC_'+name
-	else:
-		PDFfilename = 'img/pdf/'+name
-		mcmcOutFile = 'mcmc.csv'
-		mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
-	
+
+		
 	delta_coords = get_delta_coords(name)
 	delta_z = get_delta_z(name)
 	plotPDF((vc, c, np.degrees(foldPa(pa, vc)[0]), np.degrees(foldIncl(wrapAngle(incl), vc)[0])), ('Vmax', 'c', 'pa', 'incl'), PDFfilename) #check number of parameters -- adjustable plot
@@ -168,7 +175,7 @@ if test:
 	elif fit == 'model2':
 		#Vc, c, gamma,  pa, incl
 		initParams = [150, 1, 1.0, np.radians(45), np.radians(45)]
-	fit_galaxy(x, y, vel, vel_err, r50, initParams, fit, test)	
+	fit_galaxy(name, x, y, vel, vel_err, r50, initParams, fit, test)	
 
 
 else:
@@ -192,4 +199,4 @@ else:
 		elif fit == 'model2':
 			#Vc, c, gamma,  pa, incl
 			initParams = [150, 1, 1.0, np.radians(45), np.radians(45)]
-		fit_galaxy(x, y, vel, vel_err, r50, W50, W50_err, initParams, fit, test)
+		fit_galaxy(name, x, y, vel, vel_err, r50, W50, W50_err, initParams, fit, test)

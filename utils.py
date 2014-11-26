@@ -20,9 +20,8 @@ def simple_plot(x, y, vel, filename):
 def plot_hist(x, filename):
   fig = plt.figure(figsize=(10, 10))
   hist(x, bins='blocks')
-  
   plt.savefig(filename)
-
+  plt.close()	
 
 def get_SAMI_data(sami_id):
 	r50 = db.dbUtils.getFromDB('R_e', 'db/SAMI.sqlite', 'SAMI_Master ', ' where sami_id = '+ str(sami_id))[0]
