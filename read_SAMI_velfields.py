@@ -157,7 +157,6 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 	f.write(str(filename[:-15])+", "+str(vc_mod)+", "+str(np.std(sampl.flatchain[:,0]))+", "+str(c_mod)+", "+str(v0_mod)+", "+str(pa_mod)+", "+str(incl_mod)+", "+str(model_linewidth)+", "+str(HI_Vc_err)+"\n")
 	f.close()	
 
-
 if test:
 	name='test'
 	testParams = 150, 0.2, np.radians(30), np.radians([60])
