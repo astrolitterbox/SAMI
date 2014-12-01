@@ -4,9 +4,10 @@ from astropy.coordinates.distances import Distance
 import matplotlib.pyplot as plt
 import pyfits
 import db
+import pyfits
 from string import *
 from astroML.plotting import hist
-
+from geom import getIncl
 
 def simple_plot(x, y, vel, filename):
   fig = plt.figure(figsize=(10, 10))
@@ -17,9 +18,17 @@ def simple_plot(x, y, vel, filename):
   ax.axvline(c='k')
   plt.savefig(filename)
 
+def get_GAMA_incl(sami_id):
+	sami_id = str(sami_id)
+	GAMA_file = 'db/metadata/'+sami_id+"/"+sami_id+"_GAMA_metadata.fits.gz"
+	ell = pyfits.getdata(GAMA_file, extname='SERSICCATALL', header=False)['GAL_ELLIP_R'][0]
+	ba = 1-ell
+	incl = getIncl(ba)
+	return incl
+
 def plot_hist(x, filename):
   fig = plt.figure(figsize=(10, 10))
-  hist(x, bins='blocks')
+  hist(x, bins='scott')
   plt.savefig(filename)
   plt.close()	
 

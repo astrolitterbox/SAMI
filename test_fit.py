@@ -9,6 +9,7 @@ from scipy.odr import Data, Model, ODR, RealData, odr_stop
 from nicer_plots import *
 
 
+
 filenames = np.genfromtxt("Simona/THINGS_files.txt", dtype='object')
 J_HLR = []
 for filename in filenames:
@@ -27,12 +28,11 @@ for filename in filenames:
 	print hlr, 'hlr', np.round(np.cumsum(Sigma)/np.max(np.cumsum(Sigma)), 1)
 	HLR = radius[hlr]
 	#removing velocity range above 1 HLR:
-	
-	vel2 = np.ma.masked_where((radius > HLR) & (radius < radius[-1]) , vel)
-	print vel.shape
-	vel_err2 = np.ma.masked_where((radius > HLR) & (radius < radius[-1]) , vel_err)
-	radius2 = np.ma.masked_where((radius > HLR) & (radius < radius[-1]) , radius)
-	print radius2
+	test_radius = radius[-11]
+	print test_radius, 'test_radius'
+	vel2 = np.ma.masked_where((radius > HLR) & (radius <> test_radius) , vel)
+	vel_err2 = np.ma.masked_where((radius > HLR) & (radius <> test_radius) , vel_err)
+	radius2 = np.ma.masked_where((radius > HLR) & (radius <> test_radius) , radius)
 	vel_err2[-1] = 40
 	#vel2[-1] = Vmax
 
@@ -69,29 +69,36 @@ for filename in filenames:
 	M_integral = get_M_integral(radius, S1, S2, R1, R2)
 	j_int = get_j_int(J_int, M_integral)
 	
-	fig = plt.figure(figsize=(12, 10))
+	fig = plt.figure(figsize=(figsize))
 	ratio_string = str(np.round(R2/Rflat, 2))+r" $R_{s2}/R_{flat}$"
-	if stopInt <> 1:
-		plt.title(stopReason[0], color='r')
-	else:
-		plt.title(stopReason[0], color='k', fontsize=11)
+	#if stopInt <> 1:
+		#plt.title(stopReason[0], color='r')
+	plt.title("NGC2403, THINGS HI data")
+	#else:
+	#	plt.title(stopReason[0], color='k', fontsize=11)
 	ax = fig.add_subplot(611)
-	ax.plot(radius, RC_model([Vmax, Rflat], radius), c='r', label='Fit')
+	ax.plot(radius, RC_model([Vmax, Rflat], radius), c='r', label='Model')
+	ax.errorbar(radius2, vel2, yerr=vel_err2, c='k', linestyle='none', label="Fit velocity data")
+
 	#ax.errorbar(radius[radius < hlr], vel[radius < hlr], yerr=vel_err[radius < hlr], c='k', linestyle='none')
 	ax.axvline(Rflat, c='r', label="$R_{flat}$")
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
-	ax.plot(radius, vel, c='k')
+	ax.plot(radius, vel, c='k', alpha=0.4, label="")
 	ax.axvspan(0, HLR, facecolor='g', alpha=0.4)
-	ax.axvspan(np.max(radius)-1, np.max(radius), facecolor='g', alpha=0.4)
+	ax.axvspan(test_radius-1, test_radius, facecolor='g', alpha=1)
 	ax.axis([0, radius[-1]+300, 0, np.max(vel)+20])
+	ax.set_xlim([0,22000])
+	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
-	plt.ylabel("velocity, km/s")
+	plt.ylabel("Velocity, km/s")
 
 	ax = fig.add_subplot(612)
 	ax.errorbar(radius, Sigma, yerr=Sigma_err, c='k', linestyle='none')
-	ax.plot(radius, Sigma, c='k')
-	ax.plot(radius, Sigma_model_2exp([S1, S2, R1, R2], radius), c='r', label='Fit')
+	ax.plot(radius, Sigma, c='k', label="Data")
+	ax.plot(radius, Sigma_model_2exp([S1, S2, R1, R2], radius), c='r', label='Double-exponential fit')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
+	ax.legend(loc='best')
+	ax.set_xlim([0,22000])
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"$\Sigma, M_{\odot}/pc^2$")
 	plt.yscale('log')
@@ -103,6 +110,7 @@ for filename in filenames:
 	ax.plot(radius, J, c='k', label='Data')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
 	ax.legend(loc='best')
+	ax.set_xlim([0,22000])
 	plt.xlabel("radius, pc")
 	plt.ylabel(r" $J_{ring}$")
 	
@@ -112,6 +120,7 @@ for filename in filenames:
 	ax.plot(radius, np.cumsum(J_int), c='r', label='Int')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
 	ax.legend(loc='best')
+	ax.set_xlim([0,22000])
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"Cumulative $J$")
 	
@@ -119,17 +128,22 @@ for filename in filenames:
 	ax.plot(radius, np.cumsum(M_integral), c='r', label='Int')
 	ax.plot(radius, np.cumsum(ring_mass), c='k', label='Data')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
+	ax.set_xlim([0,22000])
 	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"Cumulative $M$")
 	
 	ax = fig.add_subplot(616)
-	ax.plot(radius, np.cumsum(j_int), c='r', label='Int')
-	ax.plot(radius, np.cumsum(j), c='k', label='Data, '+ratio_string)
-	ax.axvline(HLR, c='k', label="$R_{0.5}$= "+str(round(HLR/1000, 1)))
+	#ax.plot(radius, np.cumsum(j_int), c='r', label='Int')
+	#ax.plot(radius, np.cumsum(j), c='k', label='Data, '+ratio_string)
+	ax.plot(radius, get_model_j(radius, Rflat, Vmax)/(np.cumsum(J)/np.cumsum(M_integral)), c='k', label='Model/Data')
+	ax.axvline(HLR, c='k', label="$R_{0.5}$= "+str(round(HLR/1000, 1))+" kpc")
+	ax.axvspan(0, HLR, facecolor='g', alpha=0.4)
+	ax.axhline(1, c='k', linestyle='dotted')
 	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
-	plt.ylabel(r"Cumulative $j$")	
+	plt.ylabel(r"$j$")
+	ax.set_xlim([0,22000])
 	plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 	plt.savefig("img/test_"+name, bbox_inches='tight')
 

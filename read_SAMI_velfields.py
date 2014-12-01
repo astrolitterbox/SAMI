@@ -23,16 +23,9 @@ Nthreads = 4 # number of threads to run
 fit = 'exp'
 test=False
 prior = sys.argv[2]
+priorType = sys.argv[3]
 
-
-left  = 0.125  # the left side of the subplots of the figure
-right = 0.9    # the right side of the subplots of the figure
-bottom = 0.2   # the bottom of the subplots of the figure
-top = 0.9      # the top of the subplots of the figure
-wspace = 0.2   # the amount of width reserved for blank space between subplots
-hspace = 0.5   # the amount of height reserved for white space between subplots	
-
-
+GAMA_incl = get_GAMA_incl(name)
 
 
 def plotPDF(params, names, filename):
@@ -87,11 +80,11 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 
 	elif fit == 'exp':
 		if prior =='True':
-			PDFfilename = 'img/pdf/2_prior_'+name
-			mcmcOutFile = '2_prior_mcmc.csv'
-			mcmcImgName = 'img/models/good/2_prior_'+fit+'_RC_'+name
-			histName = 'img/models/hist/2_prior_incl_'+name
-			incl_chainFilename = 'chains/2_prior_incl_'+name
+			PDFfilename = 'img/pdf/'+priorType+'_prior_'+name
+			mcmcOutFile = priorType+'_prior_mcmc.csv'
+			mcmcImgName = 'img/models/good/'+priorType+'_prior_'+fit+'_RC_'+name
+			histName = 'img/models/hist/'+priorType+'_prior_incl_'+name
+			incl_chainFilename = 'chains/'+priorType+'_prior_incl_'+name
 		else:
 			PDFfilename = 'img/pdf/'+name
 			mcmcOutFile = 'mcmc.csv'
@@ -117,7 +110,7 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 		model_radius = np.linspace(0, 25, 1000)
 		model_RC = vc_mod*(1 - np.exp(-1*(model_radius/(c_mod*r50)))) #((2/math.pi) * vc_mod* np.tanh(model_radius/(c_mod*r50))) 
 		model_linewidth = HI_linewidth/(2*np.sin(incl_mod))
-
+		modelV_rot = vc_mod*(1 - np.exp(-1*(80/(c_mod*r50))))
 		
 	delta_coords = get_delta_coords(name)
 	delta_z = get_delta_z(name)
@@ -131,7 +124,7 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 	c = plt.scatter(x, y, c=vel, marker='s', edgecolor='none', vmin=-150, vmax=150)
 	plt.colorbar(c, label='vel, km/s')
 	fig.add_subplot(222)
-	
+	plt.title(' Incl:' +str(round(np.degrees(incl_mod), 1))+' GAMA incl:' +str(round(np.degrees(GAMA_incl), 1)))
 	c = plt.scatter(model_radius, np.abs(model_RC), c='k', s=4, edgecolor='none', label='Model RC', zorder=100)
 	d = plt.scatter(fit_radius, np.abs(fit_vel), c=np.abs(vel), s=5, edgecolor='none', label='Fit RC')
 	plt.axhline(model_linewidth, c='r', linewidth=2, linestyle='dotted', label='W50/(2sin(i))')	
@@ -143,7 +136,7 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 	plt.colorbar(c, label='vel, km/s')
 	plt.axhline(c='k')
 	plt.axvline(c='k')
-	plt.title('Vmax:' + str(np.round(vc_mod, 1))+'HI linewidth: '+str(round(model_linewidth))+' Incl:' +str(round(np.degrees(incl_mod), 1))+' W50:'+str(round(HI_linewidth/2, 0)))
+	plt.title('Vc:' + str(np.round(modelV_rot, 1))+'HI linewidth: '+str(round(model_linewidth))+' W50:'+str(round(HI_linewidth/2, 0)))
 	fig.add_subplot(224)
 	c = plt.scatter(x, y, c= vel - modelVelField, edgecolor='none', marker='s', vmin=-150, vmax=150)
 	plt.colorbar(c, label='Residuals, km/s')

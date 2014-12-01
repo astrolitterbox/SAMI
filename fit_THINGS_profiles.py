@@ -111,13 +111,15 @@ for filename in filenames:
 	plt.ylabel(r"Cumulative $M$")
 	
 	ax = fig.add_subplot(616)
-	ax.plot(radius, j_int, c='r', label='Int')
-	ax.plot(radius, j, c='k', label='Data, '+ratio_string)
+	ax.plot(radius, np.cumsum(J)/np.cumsum(M_integral)/get_model_j(radius, Rflat, Vmax), label='Data/Model')
+	#ax.plot(radius, get_model_j(radius, Rflat, Vmax), label="Model")#, c='k', label='Data, '+ratio_string)
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
 	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"$j$")	
 	plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+	plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
 	plt.savefig("img/profiles_"+name, bbox_inches='tight')
 
 	#f = open('fit_values.csv', 'a')

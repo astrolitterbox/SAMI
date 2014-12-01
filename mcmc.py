@@ -9,8 +9,10 @@ import sys
 import random
 
 prior = sys.argv[2]
+priorType = sys.argv[3]
 name = sys.argv[1]
-priorIncl = np.genfromtxt('chains/incl_'+name)
+#priorIncl = np.genfromtxt('chains/incl_'+name)
+GAMA_incl = get_GAMA_incl(name)
 
 
 
@@ -123,8 +125,17 @@ def lnProbAtan(pars, data):
    lnl = -0.5*((resid))
    return lnl
 
+
+def getTwoLevelPrior(pars, data):
+   name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
+   vmax, c, pa, incl, v0 = pars
+   incl_prior_sampling = np.random.choice(priorIncl)
+   LW = linewidth/(2*math.sin(incl_prior_sampling))
+   VmaxPrior = getVmaxPriorProb(vmax, LW, HI_Vc_err)
+   return VmaxPrior 
+
 def getPriorWidth(HI_Vc_err):
-  priorWidth =  10+HI_Vc_err
+  priorWidth =  5+HI_Vc_err
   return priorWidth
   
 def getProbDistribution(linewidth, HI_Vc_err, sigma):
@@ -132,6 +143,19 @@ def getProbDistribution(linewidth, HI_Vc_err, sigma):
     upper = linewidth + getPriorWidth(HI_Vc_err)
     probDist = stats.truncnorm((lower - linewidth) / sigma, (upper - linewidth) / sigma, loc=linewidth, scale=sigma)
     return probDist
+ 
+def getInclProbDistribution(incl, cutoff, sigma):
+    lower = linewidth - cutoff
+    upper = linewidth + cutoff
+    probDist = stats.truncnorm((lower - incl) / sigma, (upper - incl) / sigma, loc=incl, scale=sigma)
+    return probDist
+
+
+def getInclPrior(incl):
+    sigma=np.radians(3)   
+    probDist = getProbDistribution(GAMA_incl, np.radians(10), sigma)
+    priorProb = probDist.pdf(incl)   
+    return np.log(priorProb)
 
 def getVmaxPriorProb(vmax, LW, HI_Vc_err):
     sigma=getPriorWidth(HI_Vc_err)   
@@ -140,19 +164,12 @@ def getVmaxPriorProb(vmax, LW, HI_Vc_err):
     return np.log(priorProb)  
 
 def getLinewidthPrior(pars, data):
-   x, y, vel, evel, r50, linewidth, HI_Vc_err = data
-   vmax, c, pa, incl, v0 = pars
-   LW = linewidth/(2*math.sin(incl))
-   VmaxPrior = getVmaxPriorProb(vmax, LW, HI_Vc_err)
-   return VmaxPrior
-
-def getTwoLevelPrior(pars, data):
    name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
    vmax, c, pa, incl, v0 = pars
-   incl_prior_sampling = np.random.choice(priorIncl)
-   LW = linewidth/(2*math.sin(incl_prior_sampling))
-   VmaxPrior = getVmaxPriorProb(vmax, LW, HI_Vc_err)
-   return VmaxPrior   		
+   v22 = vmax*(1 - np.exp(-1*(200/(c*r50))))
+   LW = linewidth/(2*math.sin(GAMA_incl))
+   VmaxPrior = getVmaxPriorProb(v22, LW, HI_Vc_err)
+   return VmaxPrior
 
 
 def lnProbExp(pars, data):
@@ -163,7 +180,11 @@ def lnProbExp(pars, data):
    resid = np.sum((vel - m_vel)**2/(vel_err)**2)
    lnl = -0.5*((resid))
    if prior =='True':
-		linewidthPrior=getTwoLevelPrior(pars, data)#getLinewidthPrior(pars, data)
-		return lnl + linewidthPrior
+		if priorType == '2':
+			dataPrior = getInclPrior(incl)
+		elif priorType == '3':
+			dataPrior = getInclPrior(incl) + getLinewidthPrior(pars, data)
+		return lnl  + dataPrior
    else:
 		return lnl
+
