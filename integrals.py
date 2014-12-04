@@ -82,3 +82,7 @@ def get_j_in_ring(radius, vel):
 def get_model_j(radius, Rflat, Vmax):
 	j = (2 + ((radius/Rflat)**2)/(1 + (radius/Rflat) - np.exp(radius/Rflat)))*Rflat*Vmax
 	return j
+
+def get_final_model_j(Rflat, Vmax):
+	j = (2 + ((1000/Rflat)**2)/(1 + (1000/Rflat) - np.exp(1000/Rflat)))*Rflat*Vmax
+	return j

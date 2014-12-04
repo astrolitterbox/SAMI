@@ -18,11 +18,11 @@ for filename in filenames:
 	mask = np.ones(data.shape[0], dtype=bool)
 	mask[np.where(data[:, 3] == 0)] = False
 	data = data[mask]
-	radius = data[:, 0]
+	radius = data[:, 0]/1000
 	Sigma = data[:, 1]
 	Sigma_err = data[:, 2]# + 1/Sigma
 	vel = data[:, 3]
-	vel_err = 10 + data[:, 4] * 1/Sigma
+	vel_err = 5 + data[:, 4] * 1/Sigma
 	#Half-light radius from data
 	hlr = np.where(np.round(np.cumsum(Sigma)/np.max(np.cumsum(Sigma)), 1) > 0.5)[0][0]
 	print hlr, 'hlr', np.round(np.cumsum(Sigma)/np.max(np.cumsum(Sigma)), 1)
@@ -33,13 +33,13 @@ for filename in filenames:
 	vel2 = np.ma.masked_where((radius > HLR) & (radius <> test_radius) , vel)
 	vel_err2 = np.ma.masked_where((radius > HLR) & (radius <> test_radius) , vel_err)
 	radius2 = np.ma.masked_where((radius > HLR) & (radius <> test_radius) , radius)
-	vel_err2[-1] = 40
+	vel_err2[-1] = 50
 	#vel2[-1] = Vmax
 
 	#Fitting rotation curve with ODR:
 	RC = Model(RC_model)
 	mydata = RealData(radius2, vel2, sy=vel_err2/np.std(vel2))
-	myodr = ODR(mydata, RC, beta0=[150, 10000])
+	myodr = ODR(mydata, RC, beta0=[150, 3])
 	myoutput = myodr.run()
 	myoutput.pprint()
 	Vmax, Rflat = myoutput.beta
@@ -49,7 +49,7 @@ for filename in filenames:
 	#Fitting Sigma with ODR:
 	exponential = Model(Sigma_model_2exp)
 	mydata = RealData(radius, Sigma, sy=Sigma_err/np.std(Sigma))
-	myodr = ODR(mydata, exponential, beta0=[10000, 500, 100, 1000])
+	myodr = ODR(mydata, exponential, beta0=[1000, 100, 0.1, 2])
 	myoutput = myodr.run()
 	myoutput.pprint()
 	S1, S2, R1, R2 = myoutput.beta
@@ -86,8 +86,8 @@ for filename in filenames:
 	ax.plot(radius, vel, c='k', alpha=0.4, label="")
 	ax.axvspan(0, HLR, facecolor='g', alpha=0.4)
 	ax.axvspan(test_radius-1, test_radius, facecolor='g', alpha=1)
-	ax.axis([0, radius[-1]+300, 0, np.max(vel)+20])
-	ax.set_xlim([0,22000])
+	ax.axis([0, radius[-1]+0.3, 0, np.max(vel)+20])
+	ax.set_xlim([0,22])
 	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
 	plt.ylabel("Velocity, km/s")
@@ -98,7 +98,7 @@ for filename in filenames:
 	ax.plot(radius, Sigma_model_2exp([S1, S2, R1, R2], radius), c='r', label='Double-exponential fit')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
 	ax.legend(loc='best')
-	ax.set_xlim([0,22000])
+	ax.set_xlim([0,22])
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"$\Sigma, M_{\odot}/pc^2$")
 	plt.yscale('log')
@@ -110,7 +110,7 @@ for filename in filenames:
 	ax.plot(radius, J, c='k', label='Data')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
 	ax.legend(loc='best')
-	ax.set_xlim([0,22000])
+	ax.set_xlim([0,22])
 	plt.xlabel("radius, pc")
 	plt.ylabel(r" $J_{ring}$")
 	
@@ -120,7 +120,7 @@ for filename in filenames:
 	ax.plot(radius, np.cumsum(J_int), c='r', label='Int')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
 	ax.legend(loc='best')
-	ax.set_xlim([0,22000])
+	ax.set_xlim([0,22])
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"Cumulative $J$")
 	
@@ -128,25 +128,27 @@ for filename in filenames:
 	ax.plot(radius, np.cumsum(M_integral), c='r', label='Int')
 	ax.plot(radius, np.cumsum(ring_mass), c='k', label='Data')
 	ax.axvline(HLR, c='k', label="$R_{0.5}$")
-	ax.set_xlim([0,22000])
+	ax.set_xlim([0,22])
 	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"Cumulative $M$")
 	
 	ax = fig.add_subplot(616)
 	#ax.plot(radius, np.cumsum(j_int), c='r', label='Int')
-	#ax.plot(radius, np.cumsum(j), c='k', label='Data, '+ratio_string)
-	ax.plot(radius, get_model_j(radius, Rflat, Vmax)/(np.cumsum(J)/np.cumsum(M_integral)), c='k', label='Model/Data')
+	ax.plot(radius, np.cumsum(J)/np.cumsum(ring_mass), c='k', label='Data, '+ratio_string)
+	ax.plot(radius, np.cumsum(J_int)/(np.cumsum(M_integral)), c='r', label='Model')
+	print Rflat, Vmax, 'Rflat, Vmax'
 	ax.axvline(HLR, c='k', label="$R_{0.5}$= "+str(round(HLR/1000, 1))+" kpc")
 	ax.axvspan(0, HLR, facecolor='g', alpha=0.4)
 	ax.axhline(1, c='k', linestyle='dotted')
 	ax.legend(loc='best')
 	plt.xlabel("radius, pc")
 	plt.ylabel(r"$j$")
-	ax.set_xlim([0,22000])
+	ax.set_xlim([0,22])
+	#plt.yscale("log")
 	plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 	plt.savefig("img/test_"+name, bbox_inches='tight')
-
+	exit()
 	#f = open('fit_values.csv', 'a')
 	#f.write(name+", "+str(odr_S)+", "+str(odr_R_s)+", "+str(Vmax)+", "+str(Rflat)+"\n")
 	#f.close	

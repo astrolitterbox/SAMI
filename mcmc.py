@@ -12,7 +12,6 @@ prior = sys.argv[2]
 priorType = sys.argv[3]
 name = sys.argv[1]
 #priorIncl = np.genfromtxt('chains/incl_'+name)
-GAMA_incl = get_GAMA_incl(name)
 
 
 
@@ -57,7 +56,7 @@ def getRandParams(initParams):
 
 
 def getRotCurveFromVelField(params, data):
-  name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
+  name, x, y, vel, evel, r50, GAMA_incl, linewidth, HI_Vc_err = data
   pa, incl, v0 = params  
   x_rot, y_rot = rotateGalaxy(x, y, -pa)  
   y_rot = np.divide(y_rot, np.cos(incl))
@@ -127,7 +126,7 @@ def lnProbAtan(pars, data):
 
 
 def getTwoLevelPrior(pars, data):
-   name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
+   name, x, y, vel, evel, r50,GAMA_incl, linewidth, HI_Vc_err = data
    vmax, c, pa, incl, v0 = pars
    incl_prior_sampling = np.random.choice(priorIncl)
    LW = linewidth/(2*math.sin(incl_prior_sampling))
@@ -151,10 +150,10 @@ def getInclProbDistribution(incl, cutoff, sigma):
     return probDist
 
 
-def getInclPrior(incl):
-    sigma=np.radians(3)   
-    probDist = getProbDistribution(GAMA_incl, np.radians(10), sigma)
-    priorProb = probDist.pdf(incl)   
+def getInclPrior(GAMA_incl, incl):
+    sigma=0.1   
+    probDist = getProbDistribution(np.cos(GAMA_incl), 0.5, sigma)
+    priorProb = probDist.pdf(np.cos(incl))   
     return np.log(priorProb)
 
 def getVmaxPriorProb(vmax, LW, HI_Vc_err):
@@ -164,7 +163,7 @@ def getVmaxPriorProb(vmax, LW, HI_Vc_err):
     return np.log(priorProb)  
 
 def getLinewidthPrior(pars, data):
-   name, x, y, vel, evel, r50, linewidth, HI_Vc_err = data
+   name, x, y, vel, evel, r50, GAMA_incl, linewidth, HI_Vc_err = data
    vmax, c, pa, incl, v0 = pars
    v22 = vmax*(1 - np.exp(-1*(200/(c*r50))))
    LW = linewidth/(2*math.sin(GAMA_incl))
@@ -173,7 +172,7 @@ def getLinewidthPrior(pars, data):
 
 
 def lnProbExp(pars, data):
-   name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err = data
+   name, x, y, vel, vel_err, r50, GAMA_incl, HI_linewidth, HI_Vc_err = data
    vmax, c, pa, incl, v0 = pars
    model_data = (x, y, r50) 
    m_vel = expModel(pars, model_data)
@@ -181,9 +180,11 @@ def lnProbExp(pars, data):
    lnl = -0.5*((resid))
    if prior =='True':
 		if priorType == '2':
-			dataPrior = getInclPrior(incl)
+			dataPrior = getInclPrior(GAMA_incl, incl)
 		elif priorType == '3':
-			dataPrior = getInclPrior(incl) + getLinewidthPrior(pars, data)
+			dataPrior = getInclPrior(GAMA_incl, incl) + getLinewidthPrior(pars, data)
+		elif priorType == '4':
+			dataPrior = getLinewidthPrior(pars, data)
 		return lnl  + dataPrior
    else:
 		return lnl

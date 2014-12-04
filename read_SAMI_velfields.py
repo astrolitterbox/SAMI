@@ -13,6 +13,8 @@ from test_disk import *
 import sys
 import itertools
 from scipy import stats
+from astroML.plotting import hist
+from integrals import get_final_model_j
 
 
 #MCMC settings:
@@ -25,7 +27,6 @@ test=False
 prior = sys.argv[2]
 priorType = sys.argv[3]
 
-GAMA_incl = get_GAMA_incl(name)
 
 
 def plotPDF(params, names, filename):
@@ -44,9 +45,9 @@ def plotPDF(params, names, filename):
 	
 
 		
-def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParams, fit, test):	
+def fit_galaxy(name, x, y, vel, vel_err, r50, GAMA_incl, HI_linewidth, HI_Vc_err, initParams, fit, test):	
 	#get data
-	data = (name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err)
+	data = (name, x, y, vel, vel_err, r50, GAMA_incl, HI_linewidth, HI_Vc_err)
 	Npar=len(initParams)
 	if fit == 'model2':
 		lnprob0 = lnProb(initParams, data)
@@ -76,7 +77,6 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 		model_radius = np.linspace(0, 25, 100)
 		
 		model_RC = (model_radius*np.abs(vc_mod))/((c_mod**2 + model_radius**2)**(gamma_mod/2))
-		print model_radius.shape, model_RC.shape 
 
 	elif fit == 'exp':
 		if prior =='True':
@@ -85,13 +85,16 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 			mcmcImgName = 'img/models/good/'+priorType+'_prior_'+fit+'_RC_'+name
 			histName = 'img/models/hist/'+priorType+'_prior_incl_'+name
 			incl_chainFilename = 'chains/'+priorType+'_prior_incl_'+name
+			vc_chainFilename = 'chains/'+priorType+'_prior_vc_'+name
+			c_chainFilename = 'chains/'+priorType+'_prior_c_'+name
 		else:
 			PDFfilename = 'img/pdf/'+name
 			mcmcOutFile = 'mcmc.csv'
 			mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
 			histName = 'img/models/hist/incl_'+name
 			incl_chainFilename = 'chains/incl_'+name		
-		
+			vc_chainFilename = 'chains/vc_'+name
+			c_chainFilename = 'chains/c_'+name		
 		
 		vc = sampl.flatchain[:,0]
 		c = sampl.flatchain[:,1]
@@ -100,6 +103,9 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 		v0 = sampl.flatchain[:,4]
 		chain_incl = foldIncl(wrapAngle(incl), vc)[0]
 		np.savetxt(incl_chainFilename, chain_incl)
+		np.savetxt(vc_chainFilename, vc)
+		np.savetxt(c_chainFilename, c)
+		
 		plot_hist(np.degrees(chain_incl), histName)
 
 		incl_mod, pa_mod, vc_mod = fix_geometry(incl, pa, vc)
@@ -109,7 +115,7 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 		modelVelField = expModel(modelParams, (x, y, r50))      
 		model_radius = np.linspace(0, 25, 1000)
 		model_RC = vc_mod*(1 - np.exp(-1*(model_radius/(c_mod*r50)))) #((2/math.pi) * vc_mod* np.tanh(model_radius/(c_mod*r50))) 
-		model_linewidth = HI_linewidth/(2*np.sin(incl_mod))
+		model_linewidth = HI_linewidth/(2*np.sin(GAMA_incl))
 		modelV_rot = vc_mod*(1 - np.exp(-1*(80/(c_mod*r50))))
 		
 	delta_coords = get_delta_coords(name)
@@ -118,28 +124,33 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 	fit_radius, fit_vel = getRotCurveFromVelField((pa_mod, incl_mod, v0_mod), data)	  
 	fig = plt.figure()
 	fig.add_subplot(221)
-	plt.title("$\Delta$ ra, $\Delta$ dec: "+str(delta_coords)+" $\Delta$z: "+str(delta_z)	)
+	#plt.title("$\Delta$ ra, $\Delta$ dec: "+str(delta_coords)+" $\Delta$z: "+str(delta_z)	)
+	plt.title("SAMI "+str(name)+", v.08 kinematics")
 	plt.axhline(c='k')
 	plt.axvline(c='k')
-	c = plt.scatter(x, y, c=vel, marker='s', edgecolor='none', vmin=-150, vmax=150)
-	plt.colorbar(c, label='vel, km/s')
+	cd = plt.scatter(x, y, c=vel, marker='s', edgecolor='none', vmin=-150, vmax=150)
+	plt.colorbar(cd, label='vel, km/s')
+
+
 	fig.add_subplot(222)
+	#plt.title("Fit rotation curve")
 	plt.title(' Incl:' +str(round(np.degrees(incl_mod), 1))+' GAMA incl:' +str(round(np.degrees(GAMA_incl), 1)))
-	c = plt.scatter(model_radius, np.abs(model_RC), c='k', s=4, edgecolor='none', label='Model RC', zorder=100)
+	cd = plt.scatter(model_radius, np.abs(model_RC), c='k', s=4, edgecolor='none', label='Model RC', zorder=100)
 	d = plt.scatter(fit_radius, np.abs(fit_vel), c=np.abs(vel), s=5, edgecolor='none', label='Fit RC')
 	plt.axhline(model_linewidth, c='r', linewidth=2, linestyle='dotted', label='W50/(2sin(i))')	
 	plt.errorbar(fit_radius, np.abs(fit_vel), yerr=vel_err, c='k', linestyle='none', zorder=-200) 
 	plt.axis([0, 30, 0, 230])
 	plt.legend(loc='best')
 	fig.add_subplot(223)
-	c = plt.scatter(x, y, c=modelVelField, marker='s', edgecolor='none', vmin=-150, vmax=150)
-	plt.colorbar(c, label='vel, km/s')
+	cd = plt.scatter(x, y, c=modelVelField, marker='s', edgecolor='none', vmin=-150, vmax=150)
+	plt.colorbar(cd, label='Model velocity, km/s')
 	plt.axhline(c='k')
 	plt.axvline(c='k')
-	plt.title('Vc:' + str(np.round(modelV_rot, 1))+'HI linewidth: '+str(round(model_linewidth))+' W50:'+str(round(HI_linewidth/2, 0)))
+	plt.title('Vc:' + str(np.round(modelV_rot, 1))+'km/s, HI linewidth: '+str(round(model_linewidth))+" km/s, W50: "+str(round(HI_linewidth)))
 	fig.add_subplot(224)
-	c = plt.scatter(x, y, c= vel - modelVelField, edgecolor='none', marker='s', vmin=-150, vmax=150)
-	plt.colorbar(c, label='Residuals, km/s')
+	cd = plt.scatter(x, y, c= vel - modelVelField, edgecolor='none', marker='s', vmin=-150, vmax=150)
+	plt.colorbar(cd, label='Residuals, km/s')
+	plt.title("Residuals")
 	plt.axhline(c='k')
 	plt.axvline(c='k')
 
@@ -148,7 +159,49 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, HI_linewidth, HI_Vc_err, initParam
 	
 	f = open(mcmcOutFile, 'a')
 	f.write(str(filename[:-15])+", "+str(vc_mod)+", "+str(np.std(sampl.flatchain[:,0]))+", "+str(c_mod)+", "+str(v0_mod)+", "+str(pa_mod)+", "+str(incl_mod)+", "+str(model_linewidth)+", "+str(HI_Vc_err)+"\n")
-	f.close()	
+	f.close()
+	
+	
+	if prior == 'True':
+		#j PDF figure
+		#reading no prior fit values from previous chains
+		c_no_prior = np.genfromtxt('chains/c_'+name)
+		vc_no_prior = np.genfromtxt('chains/vc_'+name)
+		
+		j_no_prior = get_final_model_j(r50*c_no_prior, vc_no_prior)
+		
+		j = get_final_model_j(r50*c, vc)
+
+		n, bins, patches = hist(j, bins='scott')
+		n_no_prior, bins_no_prior, patches = hist(j_no_prior, bins='scott')
+		
+		fig = plt.figure()	
+		ax_Pxy = plt.axes((0.2, 0.34, 0.27, 0.52))
+		ax_Py = plt.axes((0.474, 0.34, 0.1, 0.52))
+
+
+		plt.title("Fit rotation curve and j PDF")
+		cd = ax_Pxy.scatter(model_radius, np.abs(model_RC), c='k', s=4, edgecolor='none', label='Model RC', zorder=100)
+		d = ax_Pxy.scatter(fit_radius, np.abs(fit_vel), c=np.abs(vel), s=5, edgecolor='none', label='Fit RC')
+		ax_Pxy.axhline(model_linewidth, c='r', linewidth=2, linestyle='dotted', label='W50/(2sin(i))')	
+		ax_Pxy.errorbar(fit_radius, np.abs(fit_vel), yerr=vel_err, c='k', linestyle='none', zorder=-200) 
+		ax_Pxy.axis([0, 30, 0, 230])
+		plt.xlabel("radius, arcsec")
+		plt.ylabel(r"$v_{rot}$, km/s")
+		ax_Pxy.legend(loc='best')
+
+		bin_centers = (bins[:-1] + bins[1:])/2.
+		bin_centers_no_prior = (bins_no_prior[:-1] + bins_no_prior[1:])/2.
+		
+		ax_Py.plot(n, bin_centers/np.max(bin_centers), c='r', label='j PDF, HI/inclination prior')
+		ax_Py.plot(n_no_prior, bin_centers_no_prior/np.max(bin_centers), c='teal', label='j PDF, no prior')
+		plt.gca().xaxis.set_major_locator(plt.NullLocator())
+		plt.gca().yaxis.set_major_locator(plt.NullLocator())
+		ax_Py.set_ylim([-1.03,2])
+		ax_Py.legend(loc='best')
+		ax_Py.patch.set_visible(False)
+		ax_Py.axis('off')
+		plt.savefig(mcmcImgName+"_marginal_j")
 
 if test:
 	name='test'
@@ -176,19 +229,22 @@ else:
 	else:
 		names = [sys.argv[1]]
 	for name in names:
+		print name, 'NAME'
 		filename = 'data/'+name+'_1_comp.fits.gz'
+
 		try:
 			x, y, vel, vel_err = get_velfield(filename)
 			r50, W50, W50_err = get_SAMI_data(name)
 			print W50, W50_err
+			GAMA_incl = get_GAMA_incl(name)
 		except IOError:
 			print 'No such file!'
 			continue
 		if fit == 'exp':
 			print 'FITTING ', filename[:-15]
 			#Vmax, c,  pa, incl
-			initParams = [150, 1, np.radians(45), np.radians(45), -5]
+			initParams = [150, 2.2, np.radians(45), GAMA_incl, -5]
 		elif fit == 'model2':
 			#Vc, c, gamma,  pa, incl
-			initParams = [150, 1, 1.0, np.radians(45), np.radians(45)]
-		fit_galaxy(name, x, y, vel, vel_err, r50, W50, W50_err, initParams, fit, test)
+			initParams = [150, 1, 1.0, np.radians(45), GAMA_incl]
+		fit_galaxy(name, x, y, vel, vel_err, r50, GAMA_incl, W50, W50_err, initParams, fit, test)

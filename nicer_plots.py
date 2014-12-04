@@ -39,3 +39,5 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 #minorLocatorX = MultipleLocator(0.2)
 #majorLocatorY = MultipleLocator(1)
 #minorLocatorY = MultipleLocator(0.5)
+
+figsize = (10, 12)
