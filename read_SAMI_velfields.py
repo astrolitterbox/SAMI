@@ -26,6 +26,7 @@ fit = 'exp'
 test=False
 prior = sys.argv[2]
 priorType = sys.argv[3]
+baryonType = sys.argv[4]
 
 
 
@@ -80,21 +81,21 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, GAMA_incl, HI_linewidth, HI_Vc_err
 
 	elif fit == 'exp':
 		if prior =='True':
-			PDFfilename = 'img/pdf/'+priorType+'_prior_'+name
+			PDFfilename = 'img/pdf/'+priorType+'_prior_'+name+baryonType
 			mcmcOutFile = priorType+'_prior_mcmc.csv'
-			mcmcImgName = 'img/models/good/'+priorType+'_prior_'+fit+'_RC_'+name
-			histName = 'img/models/hist/'+priorType+'_prior_incl_'+name
-			incl_chainFilename = 'chains/'+priorType+'_prior_incl_'+name
-			vc_chainFilename = 'chains/'+priorType+'_prior_vc_'+name
-			c_chainFilename = 'chains/'+priorType+'_prior_c_'+name
+			mcmcImgName = 'img/models/good/'+priorType+baryonType+'_prior_'+fit+'_RC_'+name
+			histName = 'img/models/hist/'+priorType+baryonType+'_prior_incl_'+name
+			incl_chainFilename = 'chains/'+priorType+baryonType+'_prior_incl_'+name
+			vc_chainFilename = 'chains/'+priorType+baryonType+'_prior_vc_'+name
+			c_chainFilename = 'chains/'+priorType+baryonType+'_prior_c_'+name
 		else:
-			PDFfilename = 'img/pdf/'+name
-			mcmcOutFile = 'mcmc.csv'
-			mcmcImgName = 'img/models/good/'+fit+'_RC_'+name
-			histName = 'img/models/hist/incl_'+name
-			incl_chainFilename = 'chains/incl_'+name		
-			vc_chainFilename = 'chains/vc_'+name
-			c_chainFilename = 'chains/c_'+name		
+			PDFfilename = 'img/pdf/'+name+baryonType
+			mcmcOutFile = 'mcmc'+baryonType+'.csv'
+			mcmcImgName = 'img/models/good/'+baryonType+fit+'_RC_'+name
+			histName = 'img/models/hist/incl_'+baryonType+name
+			incl_chainFilename = 'chains/incl_'+baryonType+name		
+			vc_chainFilename = 'chains/vc_'+baryonType+name
+			c_chainFilename = 'chains/c_'+baryonType+name		
 		
 		vc = sampl.flatchain[:,0]
 		c = sampl.flatchain[:,1]
@@ -157,9 +158,9 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, GAMA_incl, HI_linewidth, HI_Vc_err
 	plt.savefig(mcmcImgName)
 	plt.close()
 	
-	f = open(mcmcOutFile, 'a')
-	f.write(str(filename[:-15])+", "+str(vc_mod)+", "+str(np.std(sampl.flatchain[:,0]))+", "+str(c_mod)+", "+str(v0_mod)+", "+str(pa_mod)+", "+str(incl_mod)+", "+str(model_linewidth)+", "+str(HI_Vc_err)+"\n")
-	f.close()
+	#f = open(mcmcOutFile, 'a')
+	#f.write(str(filename[:-15])+", "+str(vc_mod)+", "+str(np.std(sampl.flatchain[:,0]))+", "+str(c_mod)+", "+str(v0_mod)+", "+str(pa_mod)+", "+str(incl_mod)+", "+str(model_linewidth)+", "+str(HI_Vc_err)+"\n")
+	#f.close()
 	
 	
 	if prior == 'True':
@@ -201,7 +202,7 @@ def fit_galaxy(name, x, y, vel, vel_err, r50, GAMA_incl, HI_linewidth, HI_Vc_err
 		ax_Py.legend(loc='best')
 		ax_Py.patch.set_visible(False)
 		ax_Py.axis('off')
-		plt.savefig(mcmcImgName+"_marginal_j")
+		plt.savefig(mcmcImgName+"_"+baryonType+"_marginal_j")
 
 if test:
 	name='test'
@@ -230,10 +231,12 @@ else:
 		names = [sys.argv[1]]
 	for name in names:
 		print name, 'NAME'
-		filename = 'data/'+name+'_1_comp.fits.gz'
-
+		#filename = 'data/'+name+'_1_comp.fits.gz'
+		filename = 'data/stars/'+str(name)+'_kinematics.fits'
 		try:
-			x, y, vel, vel_err = get_velfield(filename)
+			#x, y, vel, vel_err = get_gas_velfield(filename)
+			x, y, vel, vel_err = get_stellar_velfield(filename)
+			simple_plot(x, y, vel, 'img/test/stars/'+name)
 			r50, W50, W50_err = get_SAMI_data(name)
 			print W50, W50_err
 			GAMA_incl = get_GAMA_incl(name)

@@ -66,8 +66,30 @@ def get_ALFALFA_W50(ra, dec):
 	return W50
 
 
+def get_stellar_velfield(filename):
+		print filename
+		all_vel = pyfits.getdata(filename, extname='VEL', header=False)
+		all_vel_err = pyfits.getdata(filename, extname='VEL_ERR', header=False)
+		#good = np.where(all_vel_err) < 100
+		#vel = all_vel[good]	
+		#vel_err = all_vel_err[good]
+		print all_vel
+		all_vel = np.ma.masked_invalid(all_vel)
 
-def get_velfield(filename):
+		all_vel_err = np.ma.masked_invalid(all_vel_err)
+		mask = np.where(all_vel_err < 300)
+		print mask
+		#getting indices, i.e. y and x:
+		
+		ind = np.column_stack(mask) - 25
+		x, y = np.asarray(zip(*ind))	
+		vel_err = all_vel_err.filled()[mask]
+		vel = all_vel.filled()[mask]
+		#print 'HI', HI_linewidth
+		return x, y, vel, vel_err
+
+
+def get_gas_velfield(filename):
 		print filename
 		all_vel = pyfits.getdata(filename, extname='V', header=False)[1]
 		all_vel_err = pyfits.getdata(filename, extname='V_ERR', header=False)[1]
@@ -77,7 +99,6 @@ def get_velfield(filename):
 		all_vel = np.ma.masked_invalid(all_vel)
 		all_vel_err = np.ma.masked_invalid(all_vel_err)
 		mask = np.where(all_vel_err < 20)
-		
 		#getting indices, i.e. y and x:
 		ind = np.column_stack(mask) - 25
 		x, y = np.asarray(zip(*ind))	
